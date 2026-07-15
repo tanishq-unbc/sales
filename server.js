@@ -317,12 +317,15 @@ app.post('/api/lpos/:id/issue-order', (req, res) => {
 });
 
 // ---------- Audit log ----------
-app.get('/', (req, res) => {
-  res.send('Sales Order Automation API is running smoothly!');
-});
+const path = require('path');
 
-app.get('/api/audit-log', (req, res) => {
-  res.json(db.prepare('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 200').all());
+// 1. Tell Express to serve the static frontend assets from the public folder
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 2. Serve your index.html file when someone hits the root URL
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 });
 
 app.listen(PORT, () => {
