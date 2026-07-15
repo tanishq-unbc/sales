@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Desk — Sales Order Automation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1C1B18;
+    --paper:#F7F5F0;
+    --surface:#FFFFFF;
+    --line:#E3DFD3;
+    --muted:#8A867A;
+    --accent:#2B5D50;
+    --accent-ink:#EAF1EE;
+    --amber:#B7791F;
+    --amber-bg:#FBF1DE;
+    --red:#B23A2E;
+    --red-bg:#FBEAE7;
+    --green:#2F7A4F;
+    --green-bg:#E9F4EC;
+    --radius:6px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 32px;background:var(--surface);border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:10;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand .mark{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;
+    background:var(--ink);color:var(--paper);padding:3px 7px;border-radius:4px;letter-spacing:0.04em;
+  }
+  .brand h1{font-size:17px;font-weight:600;margin:0;}
+  nav{display:flex;gap:4px;}
+  nav button{
+    font-family:inherit;font-size:13px;font-weight:500;color:var(--muted);
+    background:none;border:none;padding:8px 14px;border-radius:var(--radius);cursor:pointer;
+  }
+  nav button:hover{background:var(--paper);color:var(--ink);}
+  nav button.active{background:var(--ink);color:var(--paper);}
+  main{max-width:1080px;margin:0 auto;padding:28px 32px 80px;}
+  h2.section-title{font-size:14px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);font-weight:600;margin:0 0 14px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:18px;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:4px;}
+  input,select,textarea{
+    width:100%;font-family:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);
+    border-radius:var(--radius);background:var(--surface);color:var(--ink);
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+  .field{margin-bottom:12px;}
+  .row-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  button.btn{
+    font-family:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:var(--radius);
+    border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;
+  }
+  button.btn.secondary{background:var(--surface);color:var(--ink);border:1px solid var(--line);}
+  button.btn.danger{background:var(--red);border-color:var(--red);}
+  button.btn.ghost{background:none;border:none;color:var(--accent);padding:6px 4px;font-weight:600;}
+  button.btn:disabled{opacity:0.45;cursor:not-allowed;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--line);}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .num{text-align:right;font-family:'IBM Plex Mono',monospace;}
+  .badge{
+    display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.03em;
+  }
+  .badge.good, .badge.matched, .badge.pass, .badge.issued{background:var(--green-bg);color:var(--green);}
+  .badge.watch, .badge.pending, .badge.draft, .badge.open{background:var(--amber-bg);color:var(--amber);}
+  .badge.blocked, .badge.flagged, .badge.hold{background:var(--red-bg);color:var(--red);}
+  .badge.sent, .badge.quoted, .badge.not_checked, .badge.approved_override{background:#EDEAE0;color:var(--muted);}
+  .item-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px;}
+  .item-row .field{margin-bottom:0;}
+  .stepper{display:flex;align-items:center;gap:0;margin:6px 0 18px;flex-wrap:wrap;}
+  .stamp{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:0.03em;
+    padding:5px 10px;border:1.5px solid var(--line);border-radius:4px;color:var(--muted);
+    text-transform:uppercase;background:var(--surface);
+  }
+  .stamp.done{border-color:var(--green);color:var(--green);background:var(--green-bg);}
+  .stamp.active{border-color:var(--amber);color:var(--amber);background:var(--amber-bg);}
+  .stamp.blocked{border-color:var(--red);color:var(--red);background:var(--red-bg);}
+  .stepper-arrow{color:var(--line);padding:0 4px;font-size:12px;}
+  .diff-list{list-style:none;margin:8px 0 0;padding:0;}
+  .diff-list li{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--red-bg);color:var(--red);
+    padding:6px 10px;border-radius:4px;margin-bottom:5px;
+  }
+  .reason-list{list-style:none;margin:8px 0 0;padding:0;}
+  .reason-list li{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--amber-bg);color:var(--amber);
+    padding:6px 10px;border-radius:4px;margin-bottom:5px;
+  }
+  .empty{color:var(--muted);font-size:13px;padding:20px 0;text-align:center;}
+  .muted{color:var(--muted);}
+  .lpo-detail{border-top:1px dashed var(--line);margin-top:14px;padding-top:14px;}
+  .subtle-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin:14px 0 6px;font-weight:600;}
+  .toast{
+    position:fixed;bottom:20px;right:20px;background:var(--ink);color:var(--paper);
+    padding:11px 18px;border-radius:var(--radius);font-size:13px;max-width:360px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.18);z-index:100;
+  }
+  .toast.error{background:var(--red);}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="mark">SO</span><h1>Order Desk</h1></div>
+  <nav id="nav"></nav>
+</header>
+<main id="main"></main>
+<script>
+const API = '/api';
+let STATE = { view: 'inquiries', customers: [], inquiries: [], quotations: [], lpos: [] };
+
+const VIEWS = ['inquiries','quotations','lpos','customers','audit'];
+const VIEW_LABELS = { inquiries:'Inquiries', quotations:'Quotations', lpos:'LPOs & orders', customers:'Customers', audit:'Audit log' };
+
+function toast(msg, isError){
+  const t = document.createElement('div');
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+async function api(path, opts){
+  const res = await fetch(API + path, Object.assign({ headers: {'Content-Type':'application/json'} }, opts));
+  const data = await res.json();
+  if(!res.ok){ toast(data.error || 'Something went wrong', true); throw new Error(data.error); }
+  return data;
+}
+
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = '';
+  VIEWS.forEach(v=>{
+    const b = document.createElement('button');
+    b.textContent = VIEW_LABELS[v];
+    b.className = STATE.view === v ? 'active' : '';
+    b.onclick = ()=>{ STATE.view = v; render(); };
+    nav.appendChild(b);
+  });
+}
+
+function badge(text){ return `<span class="badge ${text}">${text.replace(/_/g,' ')}</span>`; }
+function money(n){ return Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+async function loadAll(){
+  const [customers, inquiries, quotations, lpos] = await Promise.all([
+    api('/customers'), api('/inquiries'), api('/quotations'), api('/lpos')
+  ]);
+  STATE.customers = customers; STATE.inquiries = inquiries; STATE.quotations = quotations; STATE.lpos = lpos;
+}
+
+async function render(){
+  renderNav();
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="empty">Loading…</div>';
+  await loadAll();
+  if(STATE.view === 'customers') return renderCustomers();
+  if(STATE.view === 'inquiries') return renderInquiries();
+  if(STATE.view === 'quotations') return renderQuotations();
+  if(STATE.view === 'lpos') return renderLpos();
+  if(STATE.view === 'audit') return renderAudit();
+}
+
+// ---------------- Customers ----------------
+function renderCustomers(){
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <h2 class="section-title">Customer ledger</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Customer</th><th>Payment terms</th><th class="num">Credit limit</th><th class="num">Outstanding</th><th>Status</th></tr></thead>
+        <tbody>
+          ${STATE.customers.map(c=>`
+            <tr>
+              <td>${c.name}</td>
+              <td>${c.payment_terms}</td>
+              <td class="num mono">${money(c.credit_limit)}</td>
+              <td class="num mono">${money(c.outstanding_balance)}</td>
+              <td>${badge(c.credit_status)}</td>
+            </tr>`).join('') || `<tr><td colspan="5" class="empty">No customers yet</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+    <h2 class="section-title">Add customer</h2>
+    <div class="card">
+      <form id="customer-form">
+        <div class="grid-2">
+          <div class="field"><label>Customer name</label><input name="name" required></div>
+          <div class="field"><label>Payment terms</label><input name="payment_terms" value="Net 30" required></div>
+          <div class="field"><label>Credit limit</label><input name="credit_limit" type="number" step="0.01" value="20000" required></div>
+          <div class="field"><label>Outstanding balance</label><input name="outstanding_balance" type="number" step="0.01" value="0" required></div>
+          <div class="field"><label>Credit status</label>
+            <select name="credit_status"><option value="good">good</option><option value="watch">watch</option><option value="blocked">blocked</option></select>
+          </div>
+        </div>
+        <div class="row-actions"><button class="btn" type="submit">Add customer</button></div>
+      </form>
+    </div>
+  `;
+  document.getElementById('customer-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const f = new FormData(e.target);
+    await api('/customers', { method:'POST', body: JSON.stringify(Object.fromEntries(f)) });
+    toast('Customer added');
+    render();
+  };
+}
+
+// ---------------- Inquiries ----------------
+function itemRowsHtml(prefix, withPrice){
+  return `
+    <div id="${prefix}-items"></div>
+    <button type="button" class="btn ghost" onclick="addItemRow('${prefix}', ${withPrice})">+ add product line</button>
+  `;
+}
+function addItemRow(prefix, withPrice){
+  const wrap = document.getElementById(`${prefix}-items`);
+  const row = document.createElement('div');
+  row.className = 'item-row';
+  row.innerHTML = `
+    <div class="field"><label>Product</label><input class="p-name" required></div>
+    <div class="field"><label>Qty</label><input class="p-qty" type="number" step="0.01" required></div>
+    ${withPrice ? `<div class="field"><label>Unit price</label><input class="p-price" type="number" step="0.01" required></div>` : `<div class="field"><label>Target price</label><input class="p-price" type="number" step="0.01"></div>`}
+    <button type="button" class="btn secondary" onclick="this.parentElement.remove()">Remove</button>
+  `;
+  wrap.appendChild(row);
+}
+function collectItems(prefix){
+  return [...document.querySelectorAll(`#${prefix}-items .item-row`)].map(r=>({
+    product_name: r.querySelector('.p-name').value,
+    quantity: r.querySelector('.p-qty').value,
+    unit_price: r.querySelector('.p-price') ? r.querySelector('.p-price').value : undefined,
+    target_price: r.querySelector('.p-price') ? r.querySelector('.p-price').value : undefined
+  }));
+}
+
+function renderInquiries(){
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <h2 class="section-title">New inquiry</h2>
+    <div class="card">
+      <form id="inquiry-form">
+        <div class="grid-2">
+          <div class="field"><label>Customer</label>
+            <select name="customer_id" required>${STATE.customers.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>
+          </div>
+          <div class="field"><label>Source</label>
+            <select name="source"><option value="customer">Direct from customer</option><option value="sales_team">From sales team</option></select>
+          </div>
+          <div class="field"><label>Requested delivery terms</label><input name="requested_delivery_terms" placeholder="e.g. DAP Dubai, 2 weeks"></div>
+          <div class="field"><label>Requested payment terms</label><input name="requested_payment_terms" placeholder="e.g. Net 30"></div>
+        </div>
+        <div class="field"><label>Notes</label><textarea name="notes" rows="2"></textarea></div>
+        <div class="subtle-title">Products requested</div>
+        ${itemRowsHtml('inq', false)}
+        <div class="row-actions"><button class="btn" type="submit">Log inquiry</button></div>
+      </form>
+    </div>
+    <h2 class="section-title">Inquiries</h2>
+    <div class="card">
+      ${STATE.inquiries.length ? STATE.inquiries.map(inquiryCard).join('') : `<div class="empty">No inquiries yet</div>`}
+    </div>
+  `;
+  addItemRow('inq', false);
+  document.getElementById('inquiry-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.target));
+    f.items = collectItems('inq').map(i=>({ product_name:i.product_name, quantity:i.quantity, target_price: i.target_price || null }));
+    await api('/inquiries', { method:'POST', body: JSON.stringify(f) });
+    toast('Inquiry logged');
+    render();
+  };
+}
+
+function inquiryCard(inq){
+  return `
+    <div style="padding:12px 0;border-bottom:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>#${inq.id} — ${inq.customer.name}</strong> <span class="muted mono" style="font-size:12px">via ${inq.source.replace('_',' ')}</span></div>
+        ${badge(inq.status)}
+      </div>
+      <div class="muted" style="font-size:12px;margin:4px 0">${inq.items.map(i=>`${i.product_name} × ${i.quantity}`).join(', ')}</div>
+      ${inq.status === 'open' ? `<button class="btn secondary" style="margin-top:6px" onclick="openQuoteBuilder(${inq.id})">Create quotation</button>` : `<span class="muted" style="font-size:12px">Quotation created — see Quotations tab</span>`}
+      <div id="quote-builder-${inq.id}"></div>
+    </div>
+  `;
+}
+
+function openQuoteBuilder(inquiryId){
+  const inq = STATE.inquiries.find(i=>i.id===inquiryId);
+  const el = document.getElementById(`quote-builder-${inquiryId}`);
+  el.innerHTML = `
+    <div class="lpo-detail">
+      <div class="subtle-title">Build quotation</div>
+      <form id="quote-form-${inquiryId}">
+        <div class="grid-2">
+          <div class="field"><label>Delivery terms</label><input name="delivery_terms" placeholder="${inq.requested_delivery_terms||''}" required></div>
+          <div class="field"><label>Payment terms</label><input name="payment_terms" placeholder="${inq.customer.payment_terms}" required></div>
+        </div>
+        <div id="qb-items"></div>
+        <div class="row-actions"><button class="btn" type="submit">Create quotation</button></div>
+      </form>
+    </div>
+  `;
+  const itemsWrap = el.querySelector('#qb-items');
+  inq.items.forEach(it=>{
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <div class="field"><label>Product</label><input class="p-name" value="${it.product_name}" readonly></div>
+      <div class="field"><label>Qty</label><input class="p-qty" value="${it.quantity}" readonly></div>
+      <div class="field"><label>Unit price</label><input class="p-price" type="number" step="0.01" value="${it.target_price||''}" required></div>
+      <span></span>
+    `;
+    itemsWrap.appendChild(row);
+  });
+  document.getElementById(`quote-form-${inquiryId}`).onsubmit = async (e)=>{
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.target));
+    f.items = [...itemsWrap.querySelectorAll('.item-row')].map(r=>({
+      product_name: r.querySelector('.p-name').value,
+      quantity: r.querySelector('.p-qty').value,
+      unit_price: r.querySelector('.p-price').value
+    }));
+    await api(`/inquiries/${inquiryId}/quotation`, { method:'POST', body: JSON.stringify(f) });
+    toast('Quotation created as draft');
+    STATE.view = 'quotations';
+    render();
+  };
+}
+
+// ---------------- Quotations ----------------
+function renderQuotations(){
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <h2 class="section-title">Quotations</h2>
+    <div class="card">
+      ${STATE.quotations.length ? STATE.quotations.map(quotationCard).join('') : `<div class="empty">No quotations yet</div>`}
+    </div>
+  `;
+}
+function quotationCard(q){
+  return `
+    <div style="padding:14px 0;border-bottom:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong class="mono">Q-${String(q.id).padStart(4,'0')}</strong> — ${q.customer.name}</div>
+        ${badge(q.status)}
+      </div>
+      <table style="margin-top:8px">
+        <thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Line total</th></tr></thead>
+        <tbody>
+          ${q.items.map(i=>`<tr><td>${i.product_name}</td><td class="num mono">${i.quantity}</td><td class="num mono">${money(i.unit_price)}</td><td class="num mono">${money(i.line_total)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:6px" class="muted">
+        <span>Delivery: ${q.delivery_terms} · Payment: ${q.payment_terms}</span>
+        <span class="mono">Total ${money(q.total)}</span>
+      </div>
+      <div class="row-actions">
+        ${q.status === 'draft' ? `<button class="btn secondary" onclick="sendQuote(${q.id})">Send to customer</button>` : ''}
+        ${q.status === 'sent' ? `<button class="btn ghost" onclick="openLpoBuilder(${q.id})">Submit LPO against this quotation</button>` : ''}
+      </div>
+      <div id="lpo-builder-${q.id}"></div>
+    </div>
+  `;
+}
+async function sendQuote(id){
+  await api(`/quotations/${id}/send`, { method:'POST' });
+  toast('Quotation sent — now the locked reference for LPO matching');
+  render();
+}
+function openLpoBuilder(quotationId){
+  const q = STATE.quotations.find(x=>x.id===quotationId);
+  const el = document.getElementById(`lpo-builder-${quotationId}`);
+  el.innerHTML = `
+    <div class="lpo-detail">
+      <div class="subtle-title">Enter LPO as received from customer</div>
+      <form id="lpo-form-${quotationId}">
+        <div class="grid-2">
+          <div class="field"><label>LPO reference #</label><input name="lpo_reference" placeholder="e.g. PO-4471"></div>
+          <div class="field"><label>Customer name on LPO</label><input name="customer_name_on_lpo" value="${q.customer.name}" required></div>
+          <div class="field"><label>Delivery terms on LPO</label><input name="delivery_terms" value="${q.delivery_terms}" required></div>
+          <div class="field"><label>Payment terms on LPO</label><input name="payment_terms" value="${q.payment_terms}" required></div>
+        </div>
+        <div id="lb-items"></div>
+        <div class="row-actions"><button class="btn" type="submit">Check LPO against quotation</button></div>
+      </form>
+    </div>
+  `;
+  const itemsWrap = el.querySelector('#lb-items');
+  q.items.forEach(it=>{
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <div class="field"><label>Product</label><input class="p-name" value="${it.product_name}"></div>
+      <div class="field"><label>Qty</label><input class="p-qty" type="number" step="0.01" value="${it.quantity}"></div>
+      <div class="field"><label>Unit price</label><input class="p-price" type="number" step="0.01" value="${it.unit_price}"></div>
+      <button type="button" class="btn secondary" onclick="this.parentElement.remove()">Remove</button>
+    `;
+    itemsWrap.appendChild(row);
+  });
+  el.querySelector(`#lpo-form-${quotationId}`).insertAdjacentHTML('beforeend', '');
+  const addBtn = document.createElement('button');
+  addBtn.type='button'; addBtn.className='btn ghost'; addBtn.textContent='+ add product line (simulate an unquoted item)';
+  addBtn.onclick = ()=>{
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <div class="field"><label>Product</label><input class="p-name" required></div>
+      <div class="field"><label>Qty</label><input class="p-qty" type="number" step="0.01" required></div>
+      <div class="field"><label>Unit price</label><input class="p-price" type="number" step="0.01" required></div>
+      <button type="button" class="btn secondary" onclick="this.parentElement.remove()">Remove</button>
+    `;
+    itemsWrap.appendChild(row);
+  };
+  itemsWrap.after(addBtn);
+
+  document.getElementById(`lpo-form-${quotationId}`).onsubmit = async (e)=>{
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.target));
+    f.items = [...itemsWrap.querySelectorAll('.item-row')].map(r=>({
+      product_name: r.querySelector('.p-name').value,
+      quantity: r.querySelector('.p-qty').value,
+      unit_price: r.querySelector('.p-price').value
+    }));
+    const result = await api(`/quotations/${quotationId}/lpo`, { method:'POST', body: JSON.stringify(f) });
+    toast(result.match_status === 'matched' ? 'LPO matches quotation exactly' : 'LPO flagged — differences found', result.match_status!=='matched');
+    STATE.view = 'lpos';
+    render();
+  };
+}
+
+// ---------------- LPOs & orders ----------------
+function stageStamps(lpo){
+  const stages = [
+    { key:'received', label:'LPO received', state:'done' },
+    { key:'match', label: lpo.match_status === 'pending' ? 'Matching' : lpo.match_status, state: lpo.match_status === 'matched' || lpo.match_status === 'approved_override' ? 'done' : lpo.match_status === 'flagged' ? 'blocked' : 'active' },
+    { key:'financial', label: lpo.financial_status === 'not_checked' ? 'Ledger check' : lpo.financial_status, state: lpo.financial_status === 'pass' ? 'done' : lpo.financial_status === 'hold' ? 'blocked' : 'active' },
+    { key:'order', label: lpo.sales_order ? 'Order issued' : 'Order pending', state: lpo.sales_order ? 'done' : 'active' }
+  ];
+  return `<div class="stepper">${stages.map((s,i)=>`<span class="stamp ${s.state}">${s.label.replace(/_/g,' ')}</span>${i<stages.length-1?'<span class="stepper-arrow">&#8594;</span>':''}`).join('')}</div>`;
+}
+
+function renderLpos(){
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <h2 class="section-title">LPOs &amp; sales orders</h2>
+    <div class="card">
+      ${STATE.lpos.length ? STATE.lpos.map(lpoCard).join('') : `<div class="empty">No LPOs submitted yet — submit one from the Quotations tab</div>`}
+    </div>
+  `;
+}
+
+function lpoCard(lpo){
+  const canCheckFinancials = (lpo.match_status === 'matched' || lpo.match_status === 'approved_override') && lpo.financial_status === 'not_checked';
+  const canIssue = (lpo.match_status === 'matched' || lpo.match_status === 'approved_override') && lpo.financial_status === 'pass' && !lpo.sales_order;
+  return `
+    <div style="padding:16px 0;border-bottom:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong class="mono">LPO-${String(lpo.id).padStart(4,'0')}</strong> ${lpo.lpo_reference?`<span class="muted mono" style="font-size:12px">(${lpo.lpo_reference})</span>`:''} — ${lpo.customer_name_on_lpo}</div>
+        <span class="mono muted" style="font-size:12px">against Q-${String(lpo.quotation_id).padStart(4,'0')}</span>
+      </div>
+      ${stageStamps(lpo)}
+
+      ${lpo.match_detail.length ? `
+        <div class="subtle-title">Differences vs quotation</div>
+        <ul class="diff-list">${lpo.match_detail.map(d=>`<li>${describeDiff(d)}</li>`).join('')}</ul>
+        <div class="row-actions">
+          <button class="btn secondary" onclick="openResubmit(${lpo.id})">Resubmit corrected LPO</button>
+          <button class="btn danger" onclick="openOverride(${lpo.id})">Approve override</button>
+        </div>
+        <div id="resubmit-${lpo.id}"></div>
+        <div id="override-${lpo.id}"></div>
+      ` : ''}
+
+      ${lpo.financial_detail && lpo.financial_detail.length ? `
+        <div class="subtle-title">Ledger &amp; credit notes</div>
+        <ul class="reason-list">${lpo.financial_detail.map(r=>`<li>${r}</li>`).join('')}</ul>
+      ` : ''}
+
+      <div class="row-actions">
+        ${canCheckFinancials ? `<button class="btn secondary" onclick="checkFinancials(${lpo.id})">Run ledger &amp; credit check</button>` : ''}
+        ${canIssue ? `<button class="btn" onclick="issueOrder(${lpo.id})">Issue sales order</button>` : ''}
+        ${lpo.sales_order ? `<span class="badge issued">Sales order SO-${String(lpo.sales_order.id).padStart(4,'0')} issued</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function describeDiff(d){
+  switch(d.field){
+    case 'customer_name': return `Customer name: expected "${d.expected}", received "${d.received}"`;
+    case 'line_item_missing': return `Missing on LPO: ${d.product} (qty ${d.expected_quantity})`;
+    case 'unquoted_line_item': return `Not on quotation: ${d.product} (qty ${d.quantity})`;
+    case 'quantity': return `${d.product} quantity: expected ${d.expected}, received ${d.received}`;
+    case 'unit_price': return `${d.product} unit price: expected ${money(d.expected)}, received ${money(d.received)}`;
+    case 'line_total': return `${d.product} line total: expected ${money(d.expected)}, received ${money(d.received)}`;
+    case 'total': return `Grand total: expected ${money(d.expected)}, received ${money(d.received)}`;
+    case 'delivery_terms': return `Delivery terms: expected "${d.expected}", received "${d.received}"`;
+    case 'payment_terms': return `Payment terms: expected "${d.expected}", received "${d.received}"`;
+    default: return JSON.stringify(d);
+  }
+}
+
+function openResubmit(lpoId){
+  const lpo = STATE.lpos.find(l=>l.id===lpoId);
+  const el = document.getElementById(`resubmit-${lpoId}`);
+  el.innerHTML = `
+    <div class="lpo-detail">
+      <div class="subtle-title">Corrected LPO</div>
+      <form id="resubmit-form-${lpoId}">
+        <div class="grid-2">
+          <div class="field"><label>Customer name on LPO</label><input name="customer_name_on_lpo" value="${lpo.customer_name_on_lpo}" required></div>
+          <div class="field"><label>Delivery terms</label><input name="delivery_terms" value="${lpo.delivery_terms}" required></div>
+          <div class="field"><label>Payment terms</label><input name="payment_terms" value="${lpo.payment_terms}" required></div>
+        </div>
+        <div id="rb-items"></div>
+        <div class="row-actions"><button class="btn" type="submit">Re-check against quotation</button></div>
+      </form>
+    </div>
+  `;
+  const itemsWrap = el.querySelector('#rb-items');
+  lpo.quotation.items.forEach(it=>{
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <div class="field"><label>Product</label><input class="p-name" value="${it.product_name}"></div>
+      <div class="field"><label>Qty</label><input class="p-qty" type="number" step="0.01" value="${it.quantity}"></div>
+      <div class="field"><label>Unit price</label><input class="p-price" type="number" step="0.01" value="${it.unit_price}"></div>
+      <button type="button" class="btn secondary" onclick="this.parentElement.remove()">Remove</button>
+    `;
+    itemsWrap.appendChild(row);
+  });
+  document.getElementById(`resubmit-form-${lpoId}`).onsubmit = async (e)=>{
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.target));
+    f.items = [...itemsWrap.querySelectorAll('.item-row')].map(r=>({
+      product_name: r.querySelector('.p-name').value,
+      quantity: r.querySelector('.p-qty').value,
+      unit_price: r.querySelector('.p-price').value
+    }));
+    const result = await api(`/lpos/${lpoId}/resubmit`, { method:'POST', body: JSON.stringify(f) });
+    toast(result.match_status === 'matched' ? 'Corrected LPO matches' : 'Still flagged — see differences');
+    render();
+  };
+}
+
+function openOverride(lpoId){
+  const el = document.getElementById(`override-${lpoId}`);
+  el.innerHTML = `
+    <div class="lpo-detail">
+      <div class="subtle-title">Manual override (logged to audit trail)</div>
+      <form id="override-form-${lpoId}">
+        <div class="grid-2">
+          <div class="field"><label>Approver</label><input name="approver" required></div>
+          <div class="field"><label>Reason</label><input name="reason" required></div>
+        </div>
+        <div class="row-actions"><button class="btn danger" type="submit">Approve and proceed</button></div>
+      </form>
+    </div>
+  `;
+  document.getElementById(`override-form-${lpoId}`).onsubmit = async (e)=>{
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.target));
+    await api(`/lpos/${lpoId}/approve-override`, { method:'POST', body: JSON.stringify(f) });
+    toast('Override approved and logged');
+    render();
+  };
+}
+
+async function checkFinancials(lpoId){
+  const result = await api(`/lpos/${lpoId}/check-financials`, { method:'POST' });
+  toast(result.financial_status === 'pass' ? 'Ledger & credit check passed' : 'On hold — see notes', result.financial_status!=='pass');
+  render();
+}
+async function issueOrder(lpoId){
+  await api(`/lpos/${lpoId}/issue-order`, { method:'POST' });
+  toast('Sales order issued');
+  render();
+}
+
+// ---------------- Audit log ----------------
+async function renderAudit(){
+  const rows = await api('/audit-log');
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <h2 class="section-title">Audit log</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Time</th><th>Entity</th><th>Action</th><th>Detail</th></tr></thead>
+        <tbody>
+          ${rows.map(r=>`
+            <tr>
+              <td class="mono" style="font-size:12px">${r.created_at}</td>
+              <td class="mono" style="font-size:12px">${r.entity_type} #${r.entity_id}</td>
+              <td class="mono" style="font-size:12px">${r.action}</td>
+              <td class="mono" style="font-size:11px;max-width:360px;word-break:break-word">${r.detail || ''}</td>
+            </tr>`).join('') || `<tr><td colspan="4" class="empty">No activity yet</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+render();
+</script>
+</body>
+</html>
