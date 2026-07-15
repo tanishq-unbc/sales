@@ -1,8 +1,14 @@
 const path = require('path');
 const Database = require('better-sqlite3');
 
-const dbPath = path.join(__dirname, 'sales_orders.db');
+// Vercel environments are read-only, so we redirect the DB to /tmp in production
+const dbPath = process.env.VERCEL 
+  ? path.join('/tmp', 'sales_orders.db') 
+  : path.join(__dirname, 'sales_orders.db');
+
 const db = new Database(dbPath);
+
+// These will now execute perfectly since /tmp allows file writing
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
