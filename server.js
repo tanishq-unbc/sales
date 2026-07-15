@@ -5,7 +5,6 @@ const { matchLpoToQuotation, checkCustomerLedger } = require('./logic');
 
 const app = express();
 app.use(express.json());
-app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 3000;
 
@@ -89,7 +88,6 @@ app.post('/api/inquiries/:id/quotation', (req, res) => {
   if (!inquiry) return res.status(404).json({ error: 'inquiry not found' });
 
   const { items, delivery_terms, payment_terms } = req.body;
-  // items: [{ product_name, quantity, unit_price }]
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'items with unit_price are required to build a quotation' });
   }
@@ -144,7 +142,6 @@ app.get('/api/quotations/:id', (req, res) => {
   res.json(full);
 });
 
-// Locks the quotation as the exact reference version sent to the customer
 app.post('/api/quotations/:id/send', (req, res) => {
   const q = getQuotationFull(req.params.id);
   if (!q) return res.status(404).json({ error: 'not found' });
@@ -232,7 +229,6 @@ app.get('/api/lpos/:id', (req, res) => {
   res.json(full);
 });
 
-// A corrected LPO is resubmitted here — re-runs the match check (workflow loops back to step 4)
 app.post('/api/lpos/:id/resubmit', (req, res) => {
   const existing = getLpoFull(req.params.id);
   if (!existing) return res.status(404).json({ error: 'not found' });
@@ -263,7 +259,6 @@ app.post('/api/lpos/:id/resubmit', (req, res) => {
   res.json(runMatchCheck(existing.id));
 });
 
-// Manual approval to override a flagged mismatch (logged, not silent)
 app.post('/api/lpos/:id/approve-override', (req, res) => {
   const lpo = getLpoFull(req.params.id);
   if (!lpo) return res.status(404).json({ error: 'not found' });
