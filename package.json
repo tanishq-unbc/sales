@@ -1,0 +1,14 @@
+{
+  "name": "sales-order-automation",
+  "version": "1.0.0",
+  "description": "Sales order automation: inquiry -> quotation -> LPO match -> credit check -> sales order",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node db/seed.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "express": "^4.19.2"
+  }
+}
