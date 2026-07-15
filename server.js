@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { db, logAudit } = require('./db/database');
+const { db, logAudit } = require('./database');
 const { matchLpoToQuotation, checkCustomerLedger } = require('./logic');
 
 const app = express();
