@@ -1,30 +1,20 @@
-const { db, logAudit } = require('./database');
+const { db } = require('./database');
 
-const tx = db.transaction(() => {
-  db.prepare('DELETE FROM sales_orders').run();
-  db.prepare('DELETE FROM lpo_items').run();
-  db.prepare('DELETE FROM lpos').run();
-  db.prepare('DELETE FROM quotation_items').run();
-  db.prepare('DELETE FROM quotations').run();
-  db.prepare('DELETE FROM inquiry_items').run();
-  db.prepare('DELETE FROM inquiries').run();
-  db.prepare('DELETE FROM customers').run();
-  db.prepare('DELETE FROM audit_log').run();
+const customers = [
+  { name: 'Al Futtaim Trading LLC', credit_limit: 50000, outstanding_balance: 12000, credit_status: 'good', payment_terms: 'Net 30' },
+  { name: 'Gulf Metals FZE', credit_limit: 20000, outstanding_balance: 19500, credit_status: 'watch', payment_terms: 'Net 15' },
+  { name: 'Desert Rose Foods', credit_limit: 15000, outstanding_balance: 16200, credit_status: 'blocked', payment_terms: 'Net 30' },
+  { name: 'Marina Contracting Co', credit_limit: 100000, outstanding_balance: 5000, credit_status: 'good', payment_terms: 'Net 45' }
+];
 
-  const insertCustomer = db.prepare(
-    `INSERT INTO customers (name, credit_limit, outstanding_balance, credit_status, payment_terms) VALUES (?,?,?,?,?)`
-  );
+const insert = db.prepare(
+  `INSERT OR IGNORE INTO customers (name, credit_limit, outstanding_balance, credit_status, payment_terms) VALUES (@name, @credit_limit, @outstanding_balance, @credit_status, @payment_terms)`
+);
 
-  const c1 = insertCustomer.run('Al Futtaim Trading LLC', 500000, 120000, 'good', 'Net 30').lastInsertRowid;
-  const c2 = insertCustomer.run('Gulf Steel Works', 200000, 190000, 'good', 'Net 45').lastInsertRowid;
-  const c3 = insertCustomer.run('Desert Rose Contracting', 100000, 40000, 'watch', 'Net 60').lastInsertRowid;
-
-  logAudit('customer', c1, 'seeded', { name: 'Al Futtaim Trading LLC' });
-  logAudit('customer', c2, 'seeded', { name: 'Gulf Steel Works' });
-  logAudit('customer', c3, 'seeded', { name: 'Desert Rose Contracting' });
-
-  console.log('Seeded customers:', { c1, c2, c3 });
+const tx = db.transaction((rows) => {
+  for (const c of rows) insert.run(c);
 });
 
-tx();
-console.log('Seed complete.');
+tx(customers);
+
+console.log(`Seeded ${customers.length} customers (existing rows skipped).`);
