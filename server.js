@@ -317,6 +317,10 @@ app.post('/api/lpos/:id/issue-order', (req, res) => {
 });
 
 // ---------- Audit log ----------
+app.get('/', (req, res) => {
+  res.send('Sales Order Automation API is running smoothly!');
+});
+
 app.get('/api/audit-log', (req, res) => {
   res.json(db.prepare('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 200').all());
 });
